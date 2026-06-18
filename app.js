@@ -1032,6 +1032,25 @@ function fastForwardTo(target) {
   renderGame();
 }
 
+function confirmFastForward(target) {
+  const isSwiss = target === "swiss";
+  showConfirmModal(
+    isSwiss ? "确认快速模拟瑞士轮？" : "确认快速模拟淘汰赛？",
+    isSwiss
+      ? "这会保留当前已产生的结果，并自动模拟到瑞士轮结束。"
+      : "这会保留当前已产生的结果，并自动模拟到本届赛事结束。",
+    () => {
+      hideModal();
+      fastForwardTo(target);
+    },
+    {
+      confirmText: isSwiss ? "快速模拟瑞士轮" : "快速模拟淘汰赛",
+      cancelText: "取消",
+      kicker: "防误触确认",
+    },
+  );
+}
+
 function toggleSwissReview() {
   if (!tournament || !tournament.knockout) return;
   tournament.displayMode = tournament.displayMode === "swiss" ? "knockout" : "swiss";
@@ -1663,8 +1682,8 @@ els.backHomeStatsBottom.addEventListener("click", () => showView("home"));
 els.backHomeEdit.addEventListener("click", () => showView("home"));
 els.backHomeCustom.addEventListener("click", () => showView("home"));
 els.nextStepControls.forEach((button) => button.addEventListener("click", handleNextStep));
-els.quickSwiss.addEventListener("click", () => fastForwardTo("swiss"));
-els.quickKnockout.addEventListener("click", () => fastForwardTo("knockout"));
+els.quickSwiss.addEventListener("click", () => confirmFastForward("swiss"));
+els.quickKnockout.addEventListener("click", () => confirmFastForward("knockout"));
 els.reviewSwiss.addEventListener("click", toggleSwissReview);
 els.championBoard.addEventListener("click", handleChampionBoardClick);
 els.saveTeams.addEventListener("click", saveTeamForm);
