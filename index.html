@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LOL Worlds Simulator - V1.0 正式版</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section id="view-home" class="view active" aria-labelledby="home-title">
+        <div class="title-block">
+          <p class="version">V1.0 正式版</p>
+          <h1 id="home-title">LOL Worlds Simulator</h1>
+          <p class="subtitle">纯文字、单按钮推进、显示随机数开奖过程。</p>
+        </div>
+
+        <nav class="home-actions" aria-label="主菜单">
+          <button id="start-game" class="primary">开始游戏</button>
+          <button id="custom-game">自定义</button>
+          <button id="show-stats">数据统计</button>
+          <button id="edit-teams">修改数值</button>
+        </nav>
+      </section>
+
+      <section id="view-game" class="view" aria-labelledby="game-title">
+        <header class="topbar">
+          <button id="back-home-game" class="ghost">首页</button>
+          <div>
+            <p class="version">当前赛事</p>
+            <h2 id="game-title">创建中</h2>
+          </div>
+        </header>
+
+        <section class="match-panel" aria-live="polite">
+          <div class="match-main">
+            <p id="match-phase" class="phase">Swiss Round 1</p>
+            <h3 id="match-teams">等待比赛</h3>
+            <p id="match-powers" class="match-powers"></p>
+            <div id="odds" class="odds"></div>
+            <div id="result-box" class="result-box hidden"></div>
+          </div>
+          <aside class="match-log-panel">
+            <h3>赛事记录</h3>
+            <div id="event-log" class="log"></div>
+          </aside>
+        </section>
+
+        <section id="draw-panel" class="draw-panel" aria-live="polite">
+          <div class="draw-head">
+            <div>
+              <p id="draw-phase" class="phase">Swiss Round 1</p>
+              <h3 id="draw-title">瑞士轮抽签</h3>
+            </div>
+            <div id="draw-pool" class="draw-pool hidden"></div>
+            <div class="draw-controls">
+              <p id="draw-status" class="draw-status">等待抽签</p>
+              <button id="quick-swiss" class="quick-step" type="button">快速模拟瑞士轮</button>
+              <button id="quick-knockout" class="quick-step" type="button">快速模拟淘汰赛</button>
+              <button id="review-swiss" class="quick-step review-step" type="button">回顾瑞士轮</button>
+              <button id="next-step" class="primary next-step-control">下一步</button>
+            </div>
+          </div>
+          <div id="draw-scroll" class="draw-scroll">
+            <div id="swiss-draw-board" class="swiss-draw-board"></div>
+          </div>
+          <div class="draw-foot">
+            <button id="next-step-board" class="primary next-step-control board-next-step">下一步</button>
+          </div>
+        </section>
+      </section>
+
+      <section id="view-stats" class="view" aria-labelledby="stats-title">
+        <header class="topbar">
+          <button id="back-home-stats" class="ghost">首页</button>
+          <div>
+            <p class="version">永久保存</p>
+            <h2 id="stats-title">数据统计</h2>
+          </div>
+        </header>
+
+        <div class="stat-summary">
+          <span>总模拟次数</span>
+          <strong id="total-sims">0</strong>
+        </div>
+        <div id="champion-board" class="list"></div>
+        <div class="stats-actions">
+          <button id="back-home-stats-bottom" class="ghost" type="button">首页</button>
+          <button id="reset-stats" class="danger" type="button">清空统计</button>
+        </div>
+      </section>
+
+      <section id="view-edit" class="view" aria-labelledby="edit-title">
+        <header class="topbar">
+          <button id="back-home-edit" class="ghost">首页</button>
+          <div>
+            <p class="version">1 - 99</p>
+            <h2 id="edit-title">修改数值</h2>
+          </div>
+        </header>
+
+        <form id="team-form" class="team-form"></form>
+        <div class="form-actions">
+          <button id="save-teams" type="button" class="primary">保存</button>
+          <button id="reset-teams" type="button">恢复默认</button>
+        </div>
+      </section>
+
+      <section id="view-custom" class="view" aria-labelledby="custom-title">
+        <header class="topbar">
+          <button id="back-home-custom" class="ghost">首页</button>
+          <div>
+            <p class="version">不进入统计</p>
+            <h2 id="custom-title">自定义赛事</h2>
+          </div>
+        </header>
+
+        <form id="custom-team-form" class="team-form custom-team-form"></form>
+        <div class="form-actions">
+          <button id="start-custom" type="button" class="primary">开始自定义赛事</button>
+          <button id="reset-custom" type="button">清空</button>
+        </div>
+      </section>
+    </main>
+
+    <div id="modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-card">
+        <p id="modal-kicker" class="version">赛事提示</p>
+        <h2 id="modal-title">提示</h2>
+        <div id="modal-body" class="modal-body"></div>
+        <div class="modal-actions">
+          <button id="modal-close" class="primary" type="button">继续</button>
+          <button id="modal-confirm" class="danger hidden" type="button">确认</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
