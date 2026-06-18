@@ -98,7 +98,8 @@ button.danger {
   min-height: calc(100vh - 84px);
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
+  padding-top: clamp(70px, 13vh, 140px);
 }
 
 .version {
@@ -1067,17 +1068,19 @@ h3 {
 
   .app-shell {
     width: min(100% - 14px, 1080px);
-    padding: 14px 0 22px;
+    padding: 12px 0 22px;
   }
 
   .title-block {
-    min-height: calc(100vh - 44px);
+    min-height: auto;
     justify-content: flex-start;
-    padding-top: 58px;
+    padding-top: 28px;
   }
 
   h1 {
-    font-size: clamp(42px, 14vw, 60px);
+    max-width: 360px;
+    margin-bottom: 12px;
+    font-size: clamp(42px, 13vw, 52px);
   }
 
   h2 {
@@ -1085,9 +1088,20 @@ h3 {
   }
 
   .subtitle {
-    margin-bottom: 24px;
+    max-width: 350px;
+    margin-bottom: 22px;
     font-size: 15px;
     line-height: 1.55;
+  }
+
+  .home-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .home-actions button:first-child {
+    grid-column: 1 / -1;
   }
 
   .topbar {
