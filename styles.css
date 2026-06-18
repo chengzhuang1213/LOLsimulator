@@ -1100,11 +1100,12 @@ h3 {
 
   .match-panel {
     grid-template-columns: 1fr;
-    height: auto;
-    min-height: 0;
-    gap: 14px;
+    grid-template-rows: 392px minmax(0, 1fr);
+    height: 640px;
+    min-height: 640px;
+    gap: 12px;
     padding: 14px;
-    overflow: visible;
+    overflow: hidden;
   }
 
   .match-main,
@@ -1112,8 +1113,16 @@ h3 {
     padding: 0;
   }
 
+  .match-main {
+    display: grid;
+    grid-template-rows: auto auto auto auto minmax(76px, 1fr);
+    min-height: 0;
+  }
+
   .match-log-panel {
-    max-height: 220px;
+    min-height: 0;
+    max-height: none;
+    padding-top: 0;
   }
 
   .phase {
@@ -1130,6 +1139,7 @@ h3 {
     gap: 6px;
     margin-bottom: 12px;
     font-size: 12px;
+    min-height: 82px;
   }
 
   .power-detail {
@@ -1141,6 +1151,7 @@ h3 {
   .odds {
     max-width: 100%;
     margin-bottom: 12px;
+    min-height: 92px;
   }
 
   .odds-meter {
@@ -1164,9 +1175,18 @@ h3 {
   }
 
   .result-box {
+    width: 100%;
+    min-height: 76px;
+    max-height: 108px;
     margin: 12px 0 0;
     padding: 12px 14px;
+    overflow: auto;
     font-size: 14px;
+  }
+
+  .match-main .result-box.hidden {
+    display: block;
+    visibility: hidden;
   }
 
   .draw-panel {
