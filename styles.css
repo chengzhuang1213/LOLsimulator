@@ -1013,6 +1013,32 @@ h3 {
   gap: 12px;
 }
 
+.formula-card {
+  margin-bottom: 16px;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  padding: 16px 18px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.formula-card strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--blue);
+  font-size: 18px;
+}
+
+.formula-card p {
+  margin: 0 0 6px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.formula-card p:last-child {
+  margin-bottom: 0;
+}
+
 .team-form {
   display: grid;
   grid-template-columns: 1fr;
@@ -1134,9 +1160,24 @@ h3 {
   }
 
   .match-log-panel {
+    height: 208px;
     min-height: 0;
     max-height: none;
     padding-top: 0;
+    overflow: hidden;
+  }
+
+  .match-log-panel h3 {
+    flex: 0 0 auto;
+    margin-bottom: 8px;
+    font-size: 18px;
+  }
+
+  .match-log-panel .log {
+    flex: 0 0 166px;
+    height: 166px;
+    min-height: 0;
+    overflow: auto;
   }
 
   .phase {
@@ -1210,6 +1251,7 @@ h3 {
 
   .draw-head {
     grid-template-columns: 1fr;
+    grid-template-rows: auto 118px auto;
     gap: 12px;
     margin-bottom: 14px;
   }
@@ -1219,18 +1261,24 @@ h3 {
   }
 
   .draw-pool {
-    min-height: 58px;
+    height: 118px;
+    min-height: 118px;
     max-height: 118px;
     overflow: auto;
   }
 
   .draw-controls {
+    display: grid;
+    grid-template-columns: 1fr;
     width: 100%;
     align-items: stretch;
     flex-direction: column;
   }
 
   .draw-status {
+    min-height: 46px;
+    display: grid;
+    place-items: center;
     width: 100%;
     text-align: center;
   }

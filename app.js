@@ -1,20 +1,20 @@
 const DEFAULT_TEAMS = [
-  { name: "GEN", power: 94, varianceMin: -3, varianceMax: 1 },
+  { name: "GEN", power: 94, varianceMin: -2, varianceMax: 1 },
   { name: "BLG", power: 93, varianceMin: -2, varianceMax: 2 },
   { name: "T1", power: 92, varianceMin: -2, varianceMax: 3 },
   { name: "HLE", power: 91, varianceMin: -3, varianceMax: 2 },
   { name: "JDG", power: 88, varianceMin: -3, varianceMax: 3 },
   { name: "TES", power: 87, varianceMin: -4, varianceMax: 4 },
   { name: "DK", power: 86, varianceMin: -4, varianceMax: 3 },
-  { name: "G2", power: 86, varianceMin: -5, varianceMax: 5 },
+  { name: "G2", power: 85, varianceMin: -5, varianceMax: 5 },
   { name: "IG", power: 85, varianceMin: -4, varianceMax: 4 },
   { name: "KC", power: 83, varianceMin: -4, varianceMax: 4 },
   { name: "LYON", power: 83, varianceMin: -4, varianceMax: 4 },
-  { name: "C9", power: 81, varianceMin: -4, varianceMax: 4 },
+  { name: "C9", power: 80, varianceMin: -4, varianceMax: 4 },
   { name: "MKOI", power: 80, varianceMin: -4, varianceMax: 4 },
   { name: "TSW", power: 77, varianceMin: -5, varianceMax: 5 },
   { name: "CFO", power: 75, varianceMin: -4, varianceMax: 4 },
-  { name: "INTZ", power: 70, varianceMin: -6, varianceMax: 6 },
+  { name: "INTZ", power: 70, varianceMin: -6, varianceMax: 5 },
 ];
 
 const TEAM_KEY = "lol-worlds-alpha-teams";
