@@ -8,6 +8,8 @@
 
 V1.0 正式版
 
+更新记录见：[PATCH_NOTES.md](PATCH_NOTES.md)
+
 ## 核心玩法
 
 - 16 支队伍参加世界赛。
