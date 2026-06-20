@@ -17,8 +17,45 @@ const DEFAULT_TEAMS = [
   { name: "INTZ", power: 70, varianceMin: -6, varianceMax: 5 },
 ];
 
+const CUSTOM_DEFAULT_TEAMS = [
+  { name: "11 FNC", power: 83, varianceMin: -3, varianceMax: 4 },
+  { name: "12 TPA", power: 85, varianceMin: -4, varianceMax: 5 },
+  { name: "13 SKT", power: 93, varianceMin: -3, varianceMax: 4 },
+  { name: "14 SSW", power: 96, varianceMin: -1, varianceMax: 2 },
+  { name: "15 SKT", power: 97, varianceMin: -1, varianceMax: 2 },
+  { name: "16 SKT", power: 94, varianceMin: -2, varianceMax: 3 },
+  { name: "17 SSG", power: 91, varianceMin: -2, varianceMax: 2 },
+  { name: "18 IG", power: 93, varianceMin: -5, varianceMax: 5 },
+  { name: "19 FPX", power: 92, varianceMin: -4, varianceMax: 4 },
+  { name: "20 DWG", power: 94, varianceMin: -1, varianceMax: 1 },
+  { name: "21 EDG", power: 89, varianceMin: -3, varianceMax: 3 },
+  { name: "22 DRX", power: 88, varianceMin: -5, varianceMax: 6 },
+  { name: "23 T1", power: 92, varianceMin: -2, varianceMax: 3 },
+  { name: "24 BLG", power: 93, varianceMin: -3, varianceMax: 3 },
+  { name: "24 GEN", power: 95, varianceMin: -3, varianceMax: 1 },
+  { name: "24 T1", power: 95, varianceMin: -2, varianceMax: 3 },
+];
+
 const TEAM_KEY = "lol-worlds-alpha-teams";
 const STATS_KEY = "lol-worlds-alpha-stats";
+const TOURNAMENT_MODES = {
+  single: "现实单败制",
+  double: "加长双败制",
+};
+
+const PHASE_NAMES = {
+  "Upper Bracket Round 1": "胜者组第一轮",
+  "Upper Bracket Semifinal": "胜者组第二轮",
+  "Upper Bracket Final": "胜者组决赛",
+  "Lower Bracket Round 1": "败者组第一轮",
+  "Lower Bracket Round 2": "败者组第二轮",
+  "Lower Bracket Final": "败者组决赛",
+  "Lower Bracket Grand Final": "败者组最终轮",
+  "Grand Final": "总决赛",
+  Quarterfinal: "1/4决赛",
+  Semifinal: "半决赛",
+  Final: "总决赛",
+};
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -26,6 +63,9 @@ const els = {
   views: document.querySelectorAll(".view"),
   startGame: $("#start-game"),
   customGame: $("#custom-game"),
+  backMode: $("#back-mode"),
+  modeSingle: $("#mode-single"),
+  modeDouble: $("#mode-double"),
   showStats: $("#show-stats"),
   editTeams: $("#edit-teams"),
   backHomeGame: $("#back-home-game"),
@@ -49,6 +89,7 @@ const els = {
   nextStepControls: document.querySelectorAll(".next-step-control"),
   quickSwiss: $("#quick-swiss"),
   quickKnockout: $("#quick-knockout"),
+  restartCustomRun: $("#restart-custom-run"),
   reviewSwiss: $("#review-swiss"),
   eventLog: $("#event-log"),
   totalSims: $("#total-sims"),
@@ -70,6 +111,7 @@ const els = {
 
 let tournament = null;
 let pendingModalConfirm = null;
+let pendingTournamentStart = null;
 
 function loadTeams() {
   const saved = JSON.parse(localStorage.getItem(TEAM_KEY) || "null");
@@ -99,6 +141,15 @@ function loadTeams() {
 
 function saveTeams(teams) {
   localStorage.setItem(TEAM_KEY, JSON.stringify(teams));
+}
+
+function snapshotTeamConfig(teams) {
+  return teams.map((team) => ({
+    name: team.name,
+    power: team.power ?? team.basePower,
+    varianceMin: team.varianceMin,
+    varianceMax: team.varianceMax,
+  }));
 }
 
 function loadStats() {
@@ -149,6 +200,9 @@ function updateDrawControls() {
 
   if (els.quickSwiss) els.quickSwiss.hidden = !isSwissPhase;
   if (els.quickKnockout) els.quickKnockout.hidden = !isKnockoutPhase;
+  if (els.restartCustomRun) {
+    els.restartCustomRun.hidden = !(tournament.isCustom && tournament.phase === "complete");
+  }
   if (els.reviewSwiss) {
     els.reviewSwiss.hidden = !hasKnockout;
     els.reviewSwiss.textContent = tournament.displayMode === "swiss" ? "查看淘汰赛" : "回顾瑞士轮";
@@ -380,7 +434,9 @@ function seriesReview(match, winner, loser) {
 }
 
 function createTournament(sourceTeams = loadTeams(), options = {}) {
-  const teams = sourceTeams.map((team) => ({
+  const mode = options.mode === "single" ? "single" : "double";
+  const sourceConfig = snapshotTeamConfig(sourceTeams);
+  const teams = sourceConfig.map((team) => ({
     ...team,
     basePower: team.power,
     id: teamId(team.name),
@@ -399,10 +455,11 @@ function createTournament(sourceTeams = loadTeams(), options = {}) {
     currentMatch: null,
     revealed: false,
     draw: null,
-    displayDraw: null,
     swissHistory: [],
     displayMode: "swiss",
+    mode,
     isCustom: Boolean(options.isCustom),
+    customRestartTeams: options.isCustom ? sourceConfig : null,
     qualifiers: [],
     eliminated: [],
     knockout: null,
@@ -413,6 +470,7 @@ function createTournament(sourceTeams = loadTeams(), options = {}) {
 
   queueSwissRound();
   tournament.log.unshift(`本届参赛队伍：${teams.map((team) => team.name).join("、")}。点击下一步开始抽签。`);
+  tournament.log.unshift(`赛事模式：${TOURNAMENT_MODES[mode]}。`);
   showView("game");
   renderGame();
 }
@@ -429,12 +487,10 @@ function queueSwissRound() {
     bestOf: swissTargetWins(`${teamA.wins}-${teamA.losses}`) * 2 - 1,
   }));
   tournament.draw = {
-    kind: "swiss",
     phase: `Swiss Round ${tournament.swissRound}`,
     matches,
     revealedTeams: 0,
   };
-  tournament.displayDraw = tournament.draw;
   tournament.currentQueue = [];
   tournament.currentMatch = null;
   tournament.revealed = false;
@@ -490,16 +546,34 @@ function advanceSwiss(match, winner, loser) {
 function startKnockout() {
   tournament.phase = "knockout";
   tournament.draw = null;
-  tournament.displayDraw = null;
   tournament.displayMode = "knockout";
   const seeds = [...tournament.qualifiers].sort((a, b) => {
     return b.wins - a.wins || a.losses - b.losses || b.basePower - a.basePower;
   });
   const highPool = seeds.slice(0, 4);
   const lowPool = seeds.slice(4, 8);
-  tournament.knockout = {
+  tournament.knockout = tournament.mode === "single" ? createSingleKnockoutState(seeds) : createDoubleKnockoutState(seeds);
+  showModal(
+    "8强已经产生",
+    seeds.map((team) => team.name).join("、"),
+    "瑞士轮结束",
+  );
+  tournament.log.unshift(`POOL B 低顺位池：${lowPool.map((team) => team.name).join(", ")}`);
+  tournament.log.unshift(`POOL A 高顺位池：${highPool.map((team) => team.name).join(", ")}`);
+  tournament.log.unshift(`瑞士轮结束，8支队伍进入${TOURNAMENT_MODES[tournament.mode]}。`);
+  const bracketDraw = createKnockoutDraw(seeds, tournament.mode);
+  tournament.log.unshift(`淘汰赛抽签：${bracketDraw.logs.join(" / ")}`);
+  tournament.knockout.drawMatches = bracketDraw.matches;
+  bracketDraw.matches.forEach((match) => {
+    tournament.knockout.matches[match.slot] = match;
+  });
+  if (els.drawScroll) els.drawScroll.scrollLeft = 0;
+}
+
+function createDoubleKnockoutState(seeds) {
+  return {
+    mode: "double",
     seeds,
-    stage: "UB_R1",
     matches: {},
     ubR1Winners: [],
     ubR1Losers: [],
@@ -514,24 +588,21 @@ function startKnockout() {
     drawMatches: [],
     drawRevealedTeams: 0,
   };
-  showModal(
-    "8强已经产生",
-    seeds.map((team) => team.name).join("、"),
-    "瑞士轮结束",
-  );
-  tournament.log.unshift(`POOL B 低顺位池：${lowPool.map((team) => team.name).join(", ")}`);
-  tournament.log.unshift(`POOL A 高顺位池：${highPool.map((team) => team.name).join(", ")}`);
-  tournament.log.unshift("瑞士轮结束，8支队伍进入双败淘汰赛。");
-  const bracketDraw = createKnockoutDraw(seeds);
-  tournament.log.unshift(`淘汰赛抽签：${bracketDraw.logs.join(" / ")}`);
-  tournament.knockout.drawMatches = bracketDraw.matches;
-  bracketDraw.matches.forEach((match) => {
-    tournament.knockout.matches[match.slot] = match;
-  });
-  if (els.drawScroll) els.drawScroll.scrollLeft = 0;
 }
 
-function createKnockoutDraw(seeds) {
+function createSingleKnockoutState(seeds) {
+  return {
+    mode: "single",
+    seeds,
+    matches: {},
+    qfWinners: [],
+    sfWinners: [],
+    drawMatches: [],
+    drawRevealedTeams: 0,
+  };
+}
+
+function createKnockoutDraw(seeds, mode = "double") {
   const undefeated = shuffle(seeds.filter((team) => team.wins === 3 && team.losses === 0));
   const threeOne = shuffle(seeds.filter((team) => team.wins === 3 && team.losses === 1));
   const threeTwo = shuffle(seeds.filter((team) => team.wins === 3 && team.losses === 2));
@@ -540,10 +611,10 @@ function createKnockoutDraw(seeds) {
     return {
       logs: ["战绩池异常，按瑞士排名直接落位"],
       matches: [
-        buildSeries("Upper Bracket Round 1", seeds[0], seeds[7], "UB_R1", "W1"),
-        buildSeries("Upper Bracket Round 1", seeds[1], seeds[6], "UB_R1", "W2"),
-        buildSeries("Upper Bracket Round 1", seeds[2], seeds[5], "UB_R1", "W3"),
-        buildSeries("Upper Bracket Round 1", seeds[3], seeds[4], "UB_R1", "W4"),
+        buildOpeningKnockoutSeries(seeds[0], seeds[7], mode, 1),
+        buildOpeningKnockoutSeries(seeds[1], seeds[6], mode, 2),
+        buildOpeningKnockoutSeries(seeds[2], seeds[5], mode, 3),
+        buildOpeningKnockoutSeries(seeds[3], seeds[4], mode, 4),
       ],
     };
   }
@@ -554,10 +625,10 @@ function createKnockoutDraw(seeds) {
   const bottomOpponent = threeTwo.shift();
   const mixedPool = shuffle([...threeOne, ...threeTwo]);
   const matches = [
-    buildSeries("Upper Bracket Round 1", topSeed, topOpponent, "UB_R1", "W1"),
-    buildSeries("Upper Bracket Round 1", mixedPool[0], mixedPool[1], "UB_R1", "W2"),
-    buildSeries("Upper Bracket Round 1", bottomSeed, bottomOpponent, "UB_R1", "W3"),
-    buildSeries("Upper Bracket Round 1", mixedPool[2], mixedPool[3], "UB_R1", "W4"),
+    buildOpeningKnockoutSeries(topSeed, topOpponent, mode, 1),
+    buildOpeningKnockoutSeries(mixedPool[0], mixedPool[1], mode, 2),
+    buildOpeningKnockoutSeries(bottomSeed, bottomOpponent, mode, 3),
+    buildOpeningKnockoutSeries(mixedPool[2], mixedPool[3], mode, 4),
   ];
 
   return {
@@ -568,6 +639,13 @@ function createKnockoutDraw(seeds) {
     ],
     matches,
   };
+}
+
+function buildOpeningKnockoutSeries(teamA, teamB, mode, index) {
+  if (mode === "single") {
+    return buildSeries("Quarterfinal", teamA, teamB, "QF", `S${index}`);
+  }
+  return buildSeries("Upper Bracket Round 1", teamA, teamB, "UB_R1", `W${index}`);
 }
 
 function queueKnockoutMatches(...matches) {
@@ -600,6 +678,11 @@ function buildFinal(teamA, teamB, upperChampion) {
 
 function advanceKnockout(match, winner, loser) {
   const k = tournament.knockout;
+
+  if (k.mode === "single") {
+    advanceSingleKnockout(match, winner, loser);
+    return;
+  }
 
   if (match.stage === "UB_R1") {
     k.ubR1Winners.push(winner);
@@ -683,6 +766,39 @@ function advanceKnockout(match, winner, loser) {
   }
 }
 
+function advanceSingleKnockout(match, winner, loser) {
+  const k = tournament.knockout;
+  tournament.log.unshift(`${loser.name} 单败出局。`);
+
+  if (match.stage === "QF") {
+    k.qfWinners.push(winner);
+    if (k.qfWinners.length === 4) {
+      queueKnockoutMatches(
+        buildSeries("Semifinal", k.qfWinners[0], k.qfWinners[1], "SF", "S5"),
+        buildSeries("Semifinal", k.qfWinners[2], k.qfWinners[3], "SF", "S6"),
+      );
+    }
+  }
+
+  if (match.stage === "SF") {
+    k.sfWinners.push(winner);
+    if (k.sfWinners.length === 2) {
+      queueKnockoutMatches(
+        buildSeries("Final", k.sfWinners[0], k.sfWinners[1], "FINAL", "S7"),
+      );
+    }
+  }
+
+  if (match.stage === "FINAL") {
+    finishTournament(winner);
+  }
+}
+
+function localizedPhaseName(phase) {
+  if (PHASE_NAMES[phase]) return PHASE_NAMES[phase];
+  return String(phase || "").replace(/^Swiss Round (\d+)$/, "瑞士轮第$1轮");
+}
+
 function recordCompletedMatch(match) {
   if (!tournament?.completedMatches || !match.result) return;
   ensureMatchScore(match);
@@ -713,13 +829,14 @@ function buildChampionRun(champion) {
     const opponentScore = isTeamA ? match.scoreB : match.scoreA;
     const won = match.winner === champion.name;
     const prefix = won ? "胜" : "负";
+    const phaseName = localizedPhaseName(match.phase);
     return {
       round: index + 1,
-      phase: match.phase,
+      phase: phaseName,
       opponent,
       result: prefix,
       score: `${championScore}-${opponentScore}`,
-      text: `${match.phase}：${prefix} ${opponent} (${championScore}-${opponentScore})`,
+      text: `${phaseName}：${prefix} ${opponent} (${championScore}-${opponentScore})`,
     };
   });
 
@@ -728,6 +845,8 @@ function buildChampionRun(champion) {
     champion: champion.name,
     createdAt: new Date().toLocaleString("zh-CN"),
     swissRecord: `${champion.wins}-${champion.losses}`,
+    mode: tournament.mode || "double",
+    modeName: TOURNAMENT_MODES[tournament.mode] || TOURNAMENT_MODES.double,
     road,
   };
 }
@@ -772,6 +891,7 @@ function showChampionRunModal(teamName, run, runNumber) {
     <div class="champion-run-modal-meta">
       <span>夺冠时间：${escapeHtml(run.createdAt || "历史记录")}</span>
       <span>瑞士轮成绩：${escapeHtml(run.swissRecord || "-")}</span>
+      <span>淘汰赛赛制：${escapeHtml(run.modeName || TOURNAMENT_MODES[run.mode] || "历史记录")}</span>
     </div>
     <ol class="champion-run-modal-list">
       ${
@@ -1276,7 +1396,7 @@ function renderTournamentBoard() {
 }
 
 function renderDraw() {
-  const draw = tournament.draw || tournament.displayDraw;
+  const draw = tournament.draw;
   const visibleMatches = tournament.swissHistory || [];
   if ((!draw && visibleMatches.length === 0) || (tournament.phase !== "swiss" && tournament.displayMode !== "swiss")) {
     els.drawPanel.classList.add("hidden");
@@ -1336,13 +1456,12 @@ function renderDraw() {
           </div>
         `;
       }).join("");
-      const rows = matchRows;
       const isEmpty = totalSlots === 0;
       const terminalClass = notes[record] ? " is-terminal" : "";
       return `
         <div class="draw-card${isEmpty ? " is-empty" : ""}${terminalClass}" data-record="${record}">
           <div class="draw-record">${record}</div>
-          <div class="draw-matches">${rows}</div>
+          <div class="draw-matches">${matchRows}</div>
           <div class="draw-format">${record === "0-0" || record === "1-0" || record === "0-1" || record === "1-1" ? "BO1" : "BO3"}</div>
           ${notes[record] ? `<div class="draw-note">${notes[record]}</div>` : ""}
         </div>
@@ -1367,30 +1486,40 @@ function renderKnockoutBoard() {
     els.drawScroll.dataset.mode = "knockout";
   }
   els.drawPhase.textContent = "Knockout Stage";
-  els.drawTitle.textContent = "双败淘汰赛";
+  els.drawTitle.textContent = tournament.knockout.mode === "single" ? "现实单败制" : "加长双败制";
   renderDrawPool("可抽队伍", isKnockoutDrawing() ? remainingKnockoutDrawPools() : []);
   els.drawStatus.textContent = bracketStatusText();
 
-  const slots = [
-    ["W1", "胜者组第一轮", "upper", "队伍1", "队伍8"],
-    ["W2", "胜者组第一轮", "upper", "队伍2", "队伍7"],
-    ["W3", "胜者组第一轮", "upper", "队伍3", "队伍6"],
-    ["W4", "胜者组第一轮", "upper", "队伍4", "队伍5"],
-    ["W5", "胜者组第二轮", "upper", "W1胜者", "W2胜者"],
-    ["W6", "胜者组第二轮", "upper", "W3胜者", "W4胜者"],
-    ["W7", "胜者组决赛", "upper", "W5胜者", "W6胜者"],
-    ["L1", "败者组第一轮", "lower", "W1败者", "W2败者"],
-    ["L2", "败者组第一轮", "lower", "W3败者", "W4败者"],
-    ["L3", "败者组入口", "lower", "W5败者", ""],
-    ["L4", "败者组入口", "lower", "W6败者", ""],
-    ["L5", "败者组第二轮", "lower", "L1胜者", "L3队伍"],
-    ["L6", "败者组第二轮", "lower", "L2胜者", "L4队伍"],
-    ["L7", "败者组决赛", "lower", "L5胜者", "L6胜者"],
-    ["L8", "败者组最终轮", "lower", "L7胜者", "W7败者"],
-    ["FINAL", "总决赛", "final", "W7胜者", "L8胜者"],
-  ];
+  const slots = bracket.mode === "single"
+    ? [
+        ["S1", "1/4决赛", "upper", "队伍1", "队伍8"],
+        ["S2", "1/4决赛", "upper", "队伍2", "队伍7"],
+        ["S3", "1/4决赛", "upper", "队伍3", "队伍6"],
+        ["S4", "1/4决赛", "upper", "队伍4", "队伍5"],
+        ["S5", "半决赛", "upper", "S1胜者", "S2胜者"],
+        ["S6", "半决赛", "upper", "S3胜者", "S4胜者"],
+        ["S7", "总决赛", "final", "S5胜者", "S6胜者"],
+      ]
+    : [
+        ["W1", "胜者组第一轮", "upper", "队伍1", "队伍8"],
+        ["W2", "胜者组第一轮", "upper", "队伍2", "队伍7"],
+        ["W3", "胜者组第一轮", "upper", "队伍3", "队伍6"],
+        ["W4", "胜者组第一轮", "upper", "队伍4", "队伍5"],
+        ["W5", "胜者组第二轮", "upper", "W1胜者", "W2胜者"],
+        ["W6", "胜者组第二轮", "upper", "W3胜者", "W4胜者"],
+        ["W7", "胜者组决赛", "upper", "W5胜者", "W6胜者"],
+        ["L1", "败者组第一轮", "lower", "W1败者", "W2败者"],
+        ["L2", "败者组第一轮", "lower", "W3败者", "W4败者"],
+        ["L3", "败者组入口", "lower", "W5败者", ""],
+        ["L4", "败者组入口", "lower", "W6败者", ""],
+        ["L5", "败者组第二轮", "lower", "L1胜者", "L3队伍"],
+        ["L6", "败者组第二轮", "lower", "L2胜者", "L4队伍"],
+        ["L7", "败者组决赛", "lower", "L5胜者", "L6胜者"],
+        ["L8", "败者组最终轮", "lower", "L7胜者", "W7败者"],
+        ["FINAL", "总决赛", "final", "W7胜者", "L8胜者"],
+      ];
 
-  els.drawBoard.className = "knockout-board";
+  els.drawBoard.className = bracket.mode === "single" ? "knockout-board single-knockout-board" : "knockout-board";
   els.drawBoard.innerHTML = slots
     .map(([slot, label, type, placeholderA, placeholderB]) =>
       renderBracketCard(slot, label, type, placeholderA, placeholderB),
@@ -1449,7 +1578,7 @@ function swissTeamRevealState(match, side) {
 }
 
 function knockoutTeamRevealState(match, team) {
-  if (!isKnockoutDrawing() || !match || match.stage !== "UB_R1") return "revealed";
+  if (!isKnockoutDrawing() || !match || !["UB_R1", "QF"].includes(match.stage)) return "revealed";
   const index = tournament.knockout.drawMatches.indexOf(match);
   if (index < 0) return "revealed";
   const side = team.name === match.teamA.name ? 0 : 1;
@@ -1655,25 +1784,64 @@ function saveTeamForm() {
   showView("home");
 }
 
+function showModeView(sourceTeams, options = {}) {
+  pendingTournamentStart = {
+    sourceTeams,
+    options,
+    returnView: options.isCustom ? "custom" : "home",
+  };
+  showView("mode");
+}
+
+function chooseTournamentMode(mode) {
+  if (!pendingTournamentStart) {
+    showModeView(loadTeams(), { isCustom: false });
+    return;
+  }
+  const { sourceTeams, options } = pendingTournamentStart;
+  pendingTournamentStart = null;
+  createTournament(sourceTeams, { ...options, mode });
+  if (options.isCustom) {
+    tournament.log.unshift("自定义赛事开始，本次结果不会写入数据统计。");
+    renderGame();
+  }
+}
+
+function backFromModeView() {
+  const returnView = pendingTournamentStart?.returnView || "home";
+  pendingTournamentStart = null;
+  showView(returnView);
+}
+
 function showCustomView() {
   renderCustomTeamForm();
   showView("custom");
 }
 
 function renderCustomTeamForm() {
-  renderTeamConfigForm(els.customTeamForm, [], { blank: true });
+  renderTeamConfigForm(els.customTeamForm, CUSTOM_DEFAULT_TEAMS, { blank: false });
+}
+
+function restartCustomTournament() {
+  if (!tournament?.isCustom || !tournament.customRestartTeams) return;
+  const teams = snapshotTeamConfig(tournament.customRestartTeams);
+  const mode = tournament.mode;
+  createTournament(teams, { isCustom: true, mode });
+  tournament.log.unshift("以当前自定义设定重开，本次结果不会写入数据统计。");
+  renderGame();
 }
 
 function startCustomTournament() {
   const teams = readTeamConfigForm(els.customTeamForm, { allowBlankName: true });
   if (!teams) return;
-  createTournament(teams, { isCustom: true });
-  tournament.log.unshift("自定义赛事开始，本次结果不会写入数据统计。");
-  renderGame();
+  showModeView(teams, { isCustom: true });
 }
 
-els.startGame.addEventListener("click", () => createTournament());
+els.startGame.addEventListener("click", () => showModeView(loadTeams(), { isCustom: false }));
 els.customGame.addEventListener("click", showCustomView);
+els.backMode.addEventListener("click", backFromModeView);
+els.modeSingle.addEventListener("click", () => chooseTournamentMode("single"));
+els.modeDouble.addEventListener("click", () => chooseTournamentMode("double"));
 els.showStats.addEventListener("click", showStatsView);
 els.editTeams.addEventListener("click", showEditView);
 els.backHomeGame.addEventListener("click", () => showView("home"));
@@ -1684,6 +1852,7 @@ els.backHomeCustom.addEventListener("click", () => showView("home"));
 els.nextStepControls.forEach((button) => button.addEventListener("click", handleNextStep));
 els.quickSwiss.addEventListener("click", () => confirmFastForward("swiss"));
 els.quickKnockout.addEventListener("click", () => confirmFastForward("knockout"));
+els.restartCustomRun.addEventListener("click", restartCustomTournament);
 els.reviewSwiss.addEventListener("click", toggleSwissReview);
 els.championBoard.addEventListener("click", handleChampionBoardClick);
 els.saveTeams.addEventListener("click", saveTeamForm);

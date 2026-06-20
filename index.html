@@ -23,6 +23,29 @@
         </nav>
       </section>
 
+      <section id="view-mode" class="view" aria-labelledby="mode-title">
+        <header class="topbar">
+          <button id="back-mode" class="ghost">返回</button>
+          <div>
+            <p class="version">选择模式</p>
+            <h2 id="mode-title">选择模式</h2>
+          </div>
+        </header>
+
+        <div class="mode-grid" aria-label="选择赛事模式">
+          <button id="mode-single" class="mode-card" type="button">
+            <span class="mode-number">1</span>
+            <strong>现实单败制</strong>
+            <span>8强启用现实版单败淘汰赛。</span>
+          </button>
+          <button id="mode-double" class="mode-card primary-mode" type="button">
+            <span class="mode-number">2</span>
+            <strong>加长双败制</strong>
+            <span>继续使用现在的双败淘汰赛。</span>
+          </button>
+        </div>
+      </section>
+
       <section id="view-game" class="view" aria-labelledby="game-title">
         <header class="topbar">
           <button id="back-home-game" class="ghost">首页</button>
@@ -57,6 +80,7 @@
               <p id="draw-status" class="draw-status">等待抽签</p>
               <button id="quick-swiss" class="quick-step" type="button">快速模拟瑞士轮</button>
               <button id="quick-knockout" class="quick-step" type="button">快速模拟淘汰赛</button>
+              <button id="restart-custom-run" class="quick-step" type="button" hidden>以当前设定重开</button>
               <button id="review-swiss" class="quick-step review-step" type="button">回顾瑞士轮</button>
               <button id="next-step" class="primary next-step-control">下一步</button>
             </div>
@@ -125,7 +149,7 @@
         <form id="custom-team-form" class="team-form custom-team-form"></form>
         <div class="form-actions">
           <button id="start-custom" type="button" class="primary">开始自定义赛事</button>
-          <button id="reset-custom" type="button">清空</button>
+          <button id="reset-custom" type="button">恢复冠军乱斗</button>
         </div>
       </section>
     </main>
