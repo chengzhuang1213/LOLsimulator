@@ -1206,6 +1206,7 @@ h3 {
     gap: 12px;
     padding: 14px;
     overflow: hidden;
+    overflow-anchor: none;
   }
 
   .match-main,
@@ -1215,8 +1216,10 @@ h3 {
 
   .match-main {
     display: grid;
-    grid-template-rows: auto auto auto auto minmax(76px, 1fr);
+    grid-template-rows: 22px 108px 82px 92px 108px;
+    row-gap: 0;
     min-height: 0;
+    overflow-anchor: none;
   }
 
   .match-log-panel {
@@ -1246,15 +1249,22 @@ h3 {
   }
 
   #match-teams {
-    font-size: clamp(38px, 15vw, 56px);
+    min-height: 104px;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    font-size: clamp(34px, 13vw, 50px);
     line-height: 0.96;
+    overflow: hidden;
   }
 
   .match-powers {
     gap: 6px;
-    margin-bottom: 12px;
-    font-size: 12px;
     min-height: 82px;
+    max-height: 82px;
+    margin-bottom: 0;
+    overflow: hidden;
+    font-size: 12px;
   }
 
   .power-detail {
@@ -1265,8 +1275,10 @@ h3 {
 
   .odds {
     max-width: 100%;
-    margin-bottom: 12px;
     min-height: 92px;
+    max-height: 92px;
+    margin-bottom: 0;
+    overflow: hidden;
   }
 
   .odds-meter {
@@ -1291,10 +1303,10 @@ h3 {
 
   .result-box {
     width: 100%;
-    min-height: 76px;
+    min-height: 108px;
     max-height: 108px;
-    margin: 12px 0 0;
-    padding: 12px 14px;
+    margin: 0;
+    padding: 10px 14px;
     overflow: auto;
     font-size: 14px;
   }
@@ -1307,6 +1319,7 @@ h3 {
   .draw-panel {
     margin-top: 16px;
     padding: 12px;
+    overflow-anchor: none;
   }
 
   .draw-head {
@@ -1494,12 +1507,25 @@ h3 {
 
   .custom-form-head,
   .custom-team-row {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(62px, 1fr) 52px 52px 52px;
+    gap: 6px;
+  }
+
+  .custom-form-head span,
+  .custom-team-row input {
+    min-width: 0;
+    width: 100%;
+    padding-inline: 6px;
+    font-size: 12px;
   }
 
   .custom-form-head span:first-child,
   .custom-team-row input:first-child {
-    grid-column: 1 / -1;
+    grid-column: auto;
+  }
+
+  .custom-team-row input:first-child {
+    text-overflow: clip;
   }
 
   .home-actions button,
