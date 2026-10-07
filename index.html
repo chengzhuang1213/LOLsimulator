@@ -23,27 +23,49 @@
         </nav>
       </section>
 
-      <section id="view-mode" class="view" aria-labelledby="mode-title">
+      <section id="view-playin" class="view" aria-labelledby="playin-title">
         <header class="topbar">
-          <button id="back-mode" class="ghost">返回</button>
+          <button id="back-home-playin" class="ghost">首页</button>
           <div>
-            <p class="version">选择模式</p>
-            <h2 id="mode-title">选择模式</h2>
+            <p class="version">Worlds 2026</p>
+            <h2 id="playin-title">入围赛</h2>
           </div>
         </header>
 
-        <div class="mode-grid" aria-label="选择赛事模式">
-          <button id="mode-single" class="mode-card" type="button">
-            <span class="mode-number">1</span>
-            <strong>现实单败制</strong>
-            <span>8强启用现实版单败淘汰赛。</span>
-          </button>
-          <button id="mode-double" class="mode-card primary-mode" type="button">
-            <span class="mode-number">2</span>
-            <strong>加长双败制</strong>
-            <span>继续使用现在的双败淘汰赛。</span>
-          </button>
-        </div>
+        <section class="playin-panel" aria-live="polite">
+          <div class="playin-head">
+            <div>
+              <p id="playin-phase" class="phase">Play-In Draw</p>
+              <h3 id="playin-heading">4队双败淘汰赛</h3>
+            </div>
+            <p id="playin-status" class="playin-status">等待抽签</p>
+            <div class="playin-controls">
+              <button id="quick-playin" class="quick-step" type="button">快速模拟入围赛</button>
+              <button id="toggle-playin-details" class="quick-step" type="button" aria-expanded="false" aria-controls="playin-current">比赛详情</button>
+              <button id="next-playin" class="primary" type="button">下一步</button>
+            </div>
+          </div>
+
+          <div id="playin-pools" class="playin-pools"></div>
+
+          <div id="playin-current" class="playin-current hidden">
+            <div>
+              <p id="playin-match-phase" class="phase">Play-In Draw</p>
+              <h3 id="playin-match-teams">等待抽签</h3>
+              <div id="playin-match-powers" class="match-powers"></div>
+              <div id="playin-odds" class="odds"></div>
+              <div id="playin-result" class="result-box hidden"></div>
+            </div>
+            <aside class="playin-log-panel">
+              <h3>入围赛记录</h3>
+              <div id="playin-log" class="log"></div>
+            </aside>
+          </div>
+
+          <div class="playin-board-scroll">
+            <div id="playin-board" class="playin-board"></div>
+          </div>
+        </section>
       </section>
 
       <section id="view-game" class="view" aria-labelledby="game-title">
@@ -55,25 +77,16 @@
           </div>
         </header>
 
-        <section class="match-panel" aria-live="polite">
-          <div class="match-main">
-            <p id="match-phase" class="phase">Swiss Round 1</p>
-            <h3 id="match-teams">等待比赛</h3>
-            <p id="match-powers" class="match-powers"></p>
-            <div id="odds" class="odds"></div>
-            <div id="result-box" class="result-box hidden"></div>
-          </div>
-          <aside class="match-log-panel">
-            <h3>赛事记录</h3>
-            <div id="event-log" class="log"></div>
-          </aside>
-        </section>
-
         <section id="draw-panel" class="draw-panel" aria-live="polite">
           <div class="draw-head">
             <div>
               <p id="draw-phase" class="phase">Swiss Round 1</p>
               <h3 id="draw-title">瑞士轮抽签</h3>
+              <div class="sticky-match-summary" aria-live="polite">
+                <strong id="sticky-match-teams">等待抽签</strong>
+                <span id="sticky-match-powers"></span>
+                <span id="sticky-match-status">当前比赛信息会固定显示在这里</span>
+              </div>
             </div>
             <div id="draw-pool" class="draw-pool hidden"></div>
             <div class="draw-controls">
@@ -81,10 +94,69 @@
               <button id="quick-swiss" class="quick-step" type="button">快速模拟瑞士轮</button>
               <button id="quick-knockout" class="quick-step" type="button">快速模拟淘汰赛</button>
               <button id="restart-custom-run" class="quick-step" type="button" hidden>以当前设定重开</button>
+              <button id="review-playin" class="quick-step review-step" type="button" hidden>回顾入围赛</button>
               <button id="review-swiss" class="quick-step review-step" type="button">回顾瑞士轮</button>
+              <button id="toggle-match-details" class="quick-step" type="button" aria-expanded="false">比赛详情</button>
+              <button id="tournament-home" class="quick-step" type="button">返回主菜单</button>
               <button id="next-step" class="primary next-step-control">下一步</button>
             </div>
           </div>
+          <section id="final-live" class="final-live hidden" aria-live="polite">
+            <div class="final-live-head">
+              <div class="final-live-heading">
+                <p class="phase">Finals Live</p>
+                <h3 id="final-live-title">决赛直播</h3>
+                <span id="final-live-toolbar-score" class="final-live-toolbar-score"></span>
+              </div>
+              <div class="final-live-controls">
+                <button id="final-live-pause" class="quick-step" type="button">暂停</button>
+                <button id="final-live-next" class="primary" type="button">立即显示下一条</button>
+                <span id="final-live-finished" class="final-live-finished" hidden>赛事已结束</span>
+              </div>
+            </div>
+            <div class="final-live-scoreboard">
+              <div id="final-team-a-brand" class="final-team-brand">
+                <span class="final-team-logo"><img id="final-team-a-logo" alt="" /></span>
+                <strong id="final-team-a-name"></strong>
+              </div>
+              <div class="final-series-score">
+                <span>系列赛比分</span>
+                <strong id="final-live-score">0 : 0</strong>
+              </div>
+              <div id="final-team-b-brand" class="final-team-brand final-team-brand-right">
+                <strong id="final-team-b-name"></strong>
+                <span class="final-team-logo"><img id="final-team-b-logo" alt="" /></span>
+              </div>
+            </div>
+            <div class="final-win-meter" aria-label="本局实时胜率">
+              <div class="final-win-meter-head">
+                <strong>本局实时胜率</strong>
+                <span id="final-win-meter-time">赛前</span>
+              </div>
+              <div class="final-win-meter-labels">
+                <strong><span id="final-win-team-a"></span> <span id="final-win-team-a-rate">50%</span></strong>
+                <strong><span id="final-win-team-b-rate">50%</span> <span id="final-win-team-b"></span></strong>
+              </div>
+              <div class="final-win-meter-track" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+                <span id="final-win-meter-bar" class="final-win-meter-bar"></span>
+              </div>
+            </div>
+            <div id="final-live-feed" class="final-live-feed"></div>
+          </section>
+          <section id="match-panel" class="match-panel match-details hidden" aria-live="polite">
+            <button id="close-match-details" class="match-details-close" type="button">收起详情</button>
+            <div class="match-main">
+              <p id="match-phase" class="phase">Swiss Round 1</p>
+              <h3 id="match-teams">等待比赛</h3>
+              <p id="match-powers" class="match-powers"></p>
+              <div id="odds" class="odds"></div>
+              <div id="result-box" class="result-box hidden"></div>
+            </div>
+            <aside class="match-log-panel">
+              <h3>赛事记录</h3>
+              <div id="event-log" class="log"></div>
+            </aside>
+          </section>
           <div id="draw-scroll" class="draw-scroll">
             <div id="swiss-draw-board" class="swiss-draw-board"></div>
           </div>
