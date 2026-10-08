@@ -42,7 +42,10 @@
             <div class="playin-controls">
               <button id="quick-playin" class="quick-step" type="button">快速模拟入围赛</button>
               <button id="toggle-playin-details" class="quick-step" type="button" aria-expanded="false" aria-controls="playin-current">比赛详情</button>
-              <button id="next-playin" class="primary" type="button">开始入围赛抽签</button>
+              <div class="next-playin-guide-wrap">
+                <button id="next-playin" class="primary" type="button" aria-describedby="playin-next-guide">开始入围赛抽签</button>
+                <p id="playin-next-guide" class="new-player-guide" role="status" hidden>一直点击这里即可模拟</p>
+              </div>
             </div>
           </div>
 

@@ -41,6 +41,7 @@ const CUSTOM_DEFAULT_TEAMS = [
 
 const TEAM_KEY = "lol-worlds-2026-official-teams";
 const STATS_KEY = "lol-worlds-alpha-stats";
+const NEXT_GUIDE_KEY = "lol-worlds-alpha-next-guide-seen";
 const TOURNAMENT_MODES = {
   single: "单败淘汰赛",
   double: "双败淘汰赛",
@@ -94,6 +95,7 @@ const els = {
   togglePlayInDetails: $("#toggle-playin-details"),
   quickPlayIn: $("#quick-playin"),
   nextPlayIn: $("#next-playin"),
+  playInNextGuide: $("#playin-next-guide"),
   finalLive: $("#final-live"),
   finalLiveTitle: $("#final-live-title"),
   finalLiveToolbarScore: $("#final-live-toolbar-score"),
@@ -275,6 +277,19 @@ function setNextStepText(text) {
   els.nextStepControls.forEach((button) => {
     button.textContent = text;
   });
+}
+
+function showNewPlayerGuide() {
+  if (!els.nextPlayIn || !els.playInNextGuide || localStorage.getItem(NEXT_GUIDE_KEY) === "1") return;
+  els.nextPlayIn.classList.add("is-new-player-target");
+  els.playInNextGuide.hidden = false;
+}
+
+function dismissNewPlayerGuide() {
+  if (!els.nextPlayIn || !els.playInNextGuide || els.playInNextGuide.hidden) return;
+  els.nextPlayIn.classList.remove("is-new-player-target");
+  els.playInNextGuide.hidden = true;
+  localStorage.setItem(NEXT_GUIDE_KEY, "1");
 }
 
 function matchAdvanceText(match) {
@@ -783,6 +798,7 @@ function initializePlayIn() {
   setPlayInDetailsOpen(false);
   showView("playin");
   renderPlayIn();
+  showNewPlayerGuide();
 }
 
 function queuePlayInMatches(...matches) {
@@ -3072,8 +3088,14 @@ els.backHomePlayIn.addEventListener("click", () => {
   }
   showView("home");
 });
-els.nextPlayIn.addEventListener("click", handlePlayInNext);
-els.quickPlayIn.addEventListener("click", confirmFastForwardPlayIn);
+els.nextPlayIn.addEventListener("click", () => {
+  dismissNewPlayerGuide();
+  handlePlayInNext();
+});
+els.quickPlayIn.addEventListener("click", () => {
+  dismissNewPlayerGuide();
+  confirmFastForwardPlayIn();
+});
 els.togglePlayInDetails.addEventListener("click", togglePlayInDetails);
 els.finalLivePause.addEventListener("click", toggleFinalLivePlayback);
 els.finalLiveNext.addEventListener("click", advanceFinalLive);
