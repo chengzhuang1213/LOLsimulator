@@ -277,6 +277,41 @@ function setNextStepText(text) {
   });
 }
 
+function matchAdvanceText(match) {
+  const gamesPlayed = Number(match?.gamesPlayed) || 0;
+  if (gamesPlayed > 0) return "进行下一局";
+  if (match?.stage === "QF" && tournament?.knockout?.qfWinners.length === 0) {
+    return "开始八强赛";
+  }
+  return match?.bestOf === 1 ? "进行本场比赛" : "进行第一局";
+}
+
+function playInStageAdvanceText(match) {
+  if (tournament.phase === "playin-complete") return "进入瑞士轮";
+  const nextMatch = tournament.currentQueue[0];
+  if (!nextMatch || nextMatch.stage === match.stage) return "进入下一场";
+  const labels = {
+    PI_UPPER_FINAL: "开始胜者组决赛",
+    PI_LOWER_R1: "开始败者组首轮",
+    PI_LOWER_FINAL: "开始败者组决赛",
+    PI_FINAL: "开始最终晋级赛",
+  };
+  return labels[nextMatch.stage] || "进入下一场";
+}
+
+function completedMatchAdvanceText(match) {
+  if (match.kind === "playin") return playInStageAdvanceText(match);
+  if (match.kind === "swiss") {
+    if (tournament.currentQueue.length > 0) return "进入下一场";
+    if (tournament.qualifiers.length === 8) return "开始八强抽签";
+    return `开始第 ${tournament.swissRound + 1} 轮抽签`;
+  }
+  const nextMatch = tournament.currentQueue[0];
+  if (nextMatch?.stage === "SF" && match.stage !== "SF") return "开始半决赛";
+  if (nextMatch?.stage === "FINAL" && match.stage !== "FINAL") return "开始决赛";
+  return "进入下一场";
+}
+
 function updateDrawControls() {
   if (!tournament) return;
   const isSwissPhase = tournament.phase === "swiss";
@@ -1351,7 +1386,7 @@ function advanceKnockoutDraw() {
   }
   if (tournament.knockout.drawRevealedTeams === tournament.knockout.drawMatches.length * 2) {
     tournament.currentQueue = [...tournament.knockout.drawMatches];
-    tournament.log.unshift("淘汰赛抽签完成。点击下一步开始8强赛。");
+    tournament.log.unshift("淘汰赛抽签完成，可以开始8强赛。");
   }
   return true;
 }
@@ -1629,9 +1664,14 @@ function renderPlayIn() {
     els.playInResult.classList.remove("hidden");
     els.playInResult.textContent =
       playIn.drawRevealedTeams < totalTeams
-        ? `点击下一步，抽出第 ${playIn.drawRevealedTeams + 1} 支队伍。`
-        : "首轮抽签完成。点击下一步开始比赛。";
-    els.nextPlayIn.textContent = "下一步";
+        ? `准备抽出第 ${playIn.drawRevealedTeams + 1} 支队伍。`
+        : "首轮抽签完成，可以开始入围赛。";
+    els.nextPlayIn.textContent =
+      playIn.drawRevealedTeams === 0
+        ? "开始入围赛抽签"
+        : playIn.drawRevealedTeams < totalTeams
+          ? "继续抽签"
+          : "开始入围赛";
     return;
   }
 
@@ -1649,7 +1689,7 @@ function renderPlayIn() {
     els.playInMatchPowers.innerHTML = "";
     els.playInOdds.innerHTML = "";
     els.playInResult.classList.add("hidden");
-    els.nextPlayIn.textContent = tournament.playIn.winner ? "进入瑞士轮" : "下一步";
+    els.nextPlayIn.textContent = tournament.playIn.winner ? "进入瑞士轮" : "进入下一场";
     return;
   }
 
@@ -1669,7 +1709,7 @@ function renderPlayIn() {
   if (!tournament.revealed) {
     els.playInResult.classList.add("hidden");
     els.playInResult.textContent = "";
-    els.nextPlayIn.textContent = "下一步";
+    els.nextPlayIn.textContent = matchAdvanceText(match);
     return;
   }
 
@@ -1680,8 +1720,8 @@ function renderPlayIn() {
   els.nextPlayIn.textContent = tournament.phase === "playin-complete"
     ? "进入瑞士轮"
     : match.result
-      ? "下一场"
-      : "下一局";
+      ? completedMatchAdvanceText(match)
+      : matchAdvanceText(match);
 }
 
 function renderPlayInPools() {
@@ -2275,7 +2315,7 @@ function toggleFinalLivePlayback() {
 }
 
 function ensureFinalLiveMode(match) {
-  if (!isFinalMatch(match)) {
+  if (!isFinalMatch(match) || tournament.displayMode === "swiss") {
     clearFinalLiveTimer();
     if (els.finalLive) els.finalLive.classList.add("hidden");
     return;
@@ -2341,7 +2381,7 @@ function renderGame() {
   if (!tournament.revealed) {
     els.resultBox.classList.add("hidden");
     els.resultBox.textContent = "";
-    setNextStepText("下一步");
+    setNextStepText(matchAdvanceText(match));
     return;
   }
 
@@ -2351,7 +2391,15 @@ function renderGame() {
   } else {
     els.resultBox.textContent = match.result.displayScore;
   }
-  setNextStepText(tournament.phase === "complete" ? (tournament.isCustom ? "返回首页" : "查看统计") : "下一步");
+  setNextStepText(
+    tournament.phase === "complete"
+      ? tournament.isCustom
+        ? "返回首页"
+        : "查看统计"
+      : match.result
+        ? completedMatchAdvanceText(match)
+        : matchAdvanceText(match),
+  );
   renderStickyMatchSummary(match, rateA, rateB);
 }
 
@@ -2431,12 +2479,18 @@ function renderKnockoutDrawWaiting() {
   els.matchPowers.textContent = "";
   els.odds.innerHTML = "";
   els.resultBox.classList.remove("hidden");
-  els.resultBox.textContent = `点击下一步，抽出第 ${nextNumber} 个8强队伍。可抽队伍见上方队伍池。`;
+  els.resultBox.textContent = `准备抽出第 ${nextNumber} 个8强队伍。可抽队伍见上方队伍池。`;
   if (tournament.knockout.drawRevealedTeams >= totalTeams) {
-    els.resultBox.textContent = "8强抽签完成。点击下一步开始淘汰赛。";
+    els.resultBox.textContent = "8强抽签完成，可以开始8强赛。";
   }
   setStickyMatchSummary("8强抽签", els.resultBox.textContent);
-  setNextStepText("下一步");
+  setNextStepText(
+    tournament.knockout.drawRevealedTeams === 0
+      ? "开始八强抽签"
+      : tournament.knockout.drawRevealedTeams < totalTeams
+        ? "继续八强抽签"
+        : "开始八强赛",
+  );
 }
 
 function drawPoolTitle() {
@@ -2564,12 +2618,12 @@ function renderDrawWaiting() {
       const nextNumber = tournament.draw.revealedTeams + 1;
       const currentMatch = tournament.draw.matches[Math.floor(tournament.draw.revealedTeams / 2)];
       const groupName = currentMatch.poolLabel || `${currentMatch.record} 池`;
-      els.resultBox.textContent = `点击下一步，从 ${groupName} 抽出第 ${nextNumber} 个队伍。可抽队伍见上方队伍池。`;
+      els.resultBox.textContent = `准备从 ${groupName} 抽出第 ${nextNumber} 个队伍。可抽队伍见上方队伍池。`;
     }
-    setNextStepText("下一步");
+    setNextStepText(tournament.draw.revealedTeams === 0 ? `开始第 ${tournament.swissRound} 轮抽签` : "继续抽签");
   } else {
-    els.resultBox.textContent = `${commentary ? `${commentary} ` : ""}本轮抽签完成。点击下一步开始模拟比赛。`;
-    setNextStepText("下一步");
+    els.resultBox.textContent = `${commentary ? `${commentary} ` : ""}本轮抽签完成，可以开始比赛。`;
+    setNextStepText(`开始第 ${tournament.swissRound} 轮`);
   }
   setStickyMatchSummary("瑞士轮抽签", els.resultBox.textContent);
 }
